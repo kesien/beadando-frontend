@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Beadandó minimal frontend</title>
+    <style>
+      body {
+        font-family: sans-serif;
+      }
+      label {
+        display: block;
+        margin: 10px 0;
+      }
+
+      form {
+        padding: 20px;
+        border: 1px solid lightgray;
+        max-width: 300px;
+      }
+      button {
+        margin-top: 20px;
+        display: block;
+        padding: 10px;
+        width: 100%;
+        background-color: rgb(0, 167, 36);
+        color: #fff;
+        border: none;
+        transition: all 0.3s ease;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-family: inherit;
+      }
+
+      button:hover {
+        background-color: rgb(0, 138, 30);
+      }
+
+      .delLink {
+        cursor: pointer;
+        margin-left: 10px;
+        color: red;
+      }
+
+      div {
+        max-width: 700px;
+        padding: 10px;
+        border: 1px solid lightgray;
+        border-radius: 10px;
+        margin: 10px 0;
+      }
+
+      form p {
+        background-color: lightgray;
+        padding: 10px;
+        text-align: center;
+      }
+
+      input {
+        font-family: inherit;
+        font-size: 16px;
+        padding: 3px;
+      }
+
+      select {
+        padding: 3px;
+      }
+    </style>
+  </head>
+  <body>
+    <div>
+      <h3>Ügyfelek az adatbázisban</h3>
+      <ul class="ugyfelek"></ul>
+    </div>
+    <form action="#">
+      <p><strong>Új ügyfél hozzáadása</strong></p>
+      <label for="name">Név</label>
+      <input
+        type="text"
+        maxlength="30"
+        required
+        id="name"
+        placeholder="Név"
+        name="name"
+      /><br />
+      <label for="szulev">Születési év</label>
+      <input
+        type="number"
+        id="szulev"
+        min="1000"
+        max="9999"
+        name="szulev"
+      /><br />
+      <label for="irszam">Irányítószám</label>
+      <input
+        type="number"
+        id="irszam"
+        min="1000"
+        max="9999"
+        name="irszam"
+      /><br />
+      <label for="orsz">Ország</label>
+      <select name="orszag" id="orsz">
+        <option value="HUN" selected>Magyarország</option>
+        <option value="GER">Németország</option>
+        <option value="ENG">Anglia</option>
+      </select>
+      <button type="submit">Mentés</button>
+    </form>
+
+    <script>
+      const URL = 'https://szoftver2021.herokuapp.com/';
+      let name = '';
+      let irszam = 0;
+      let orsz = '';
+      let szulev = 0;
+      let ugyfelek = [];
+      const nev = document.querySelector('#name');
+      const irsz = document.querySelector('#irszam');
+      const nation = document.querySelector('#orsz');
+      const birth = document.querySelector('#szulev');
+      const form = document.querySelector('form');
+      form.addEventListener('submit', (event) => {
+        event.preventDefault();
+        name = nev.value;
+        irszam = parseInt(irsz.value);
+        orsz = nation.value;
+        szulev = parseInt(birth.value);
+        addNewUgyfel();
+        form.reset();
+      });
+
+      const addNewUgyfel = async () => {
+        const response = await fetch(URL + 'ugyfel', {
+          method: 'POST',
+          mode: 'cors',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ nev: name, irszam, szulev, orsz }),
+        });
+        const data = await response.json();
+        ugyfelek.push(data);
+        refreshUgyfelList();
+      };
+
+      const getAllUgyfel = async () => {
+        const response = await fetch(URL + 'ugyfel');
+        const data = await response.json();
+        for (const ugyfel of data) {
+          ugyfelek.push(ugyfel);
+        }
+      };
+      document.addEventListener('readystatechange', async (event) => {
+        if (event.target.readyState === 'complete') {
+          await getAllUgyfel();
+          refreshUgyfelList();
+        }
+      });
+
+      const refreshUgyfelList = () => {
+        const list = document.querySelector('.ugyfelek');
+        list.innerHTML = '';
+        ugyfelek.forEach((ugyfel) => {
+          const li = document.createElement('LI');
+          li.innerHTML = `<strong>${ugyfel.nev}</strong>, Született: ${ugyfel.szulev} - Irányítószám: ${ugyfel.irszam} - Nemzetiség: ${ugyfel.orsz}`;
+          const delLink = document.createElement('A');
+          delLink.dataset['id'] = ugyfel.azon;
+          delLink.innerText = 'Törlés';
+          delLink.classList.add('delLink');
+          delLink.addEventListener('click', (event) => {
+            event.preventDefault();
+            deleteUgyfel(ugyfel.azon);
+          });
+          li.appendChild(delLink);
+          list.appendChild(li);
+        });
+      };
+
+      const deleteUgyfel = async (id) => {
+        const response = await fetch(URL + 'ugyfel/' + id, {
+          method: 'DELETE',
+          mode: 'cors',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+        if (response.status === 204) {
+          ugyfelek = ugyfelek.filter((ugyfel) => ugyfel.azon !== id);
+        }
+        refreshUgyfelList();
+      };
+    </script>
+  </body>
+</html>
