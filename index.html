@@ -203,10 +203,10 @@
       };
       document.addEventListener('readystatechange', async (event) => {
         if (event.target.readyState === 'complete') {
-          spinner.classList.toggle('.hidden');
+          spinner.classList.remove('hidden');
           await getAllUgyfel();
           refreshUgyfelList();
-          spinner.classList.toggle('.hidden');
+          spinner.classList.add('hidden');
         }
       });
 
